@@ -47,7 +47,7 @@ namespace DataStructureT
 
 		bool ListEmpty()
 		{
-			return head;
+			return this->head;
 		}
 
 		// Introduction to Algorithms 3e: 10.2 List Search pg 239

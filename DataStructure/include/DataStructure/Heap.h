@@ -43,7 +43,7 @@ namespace DataStructureT
 		int Parent(int i) { return (i - 1) / 2; }
 		int Left(int i) { return 2 * i + 1; }
 		int Right(int i) { return 2 * i + 2; }
-		T Root() { return heap[0]; }
+		T Root() { return this->heap[0]; }
 
 		virtual void Insert(const T& element) = 0;
 		virtual T Extract() = 0;
@@ -58,11 +58,11 @@ namespace DataStructureT
 
 		void IncreaseSize()
 		{
-			T* newHeap = new T[length << 1];
-			::memcpy(newHeap, heap, length * sizeof(T));
-			length = length << 1;
-			SAFE_DELETE_ARRAY(heap);
-			heap = newHeap;
+			T* newHeap = new T[this->length << 1];
+			::memcpy(newHeap, this->heap, length * sizeof(T));
+			this->length = this->length << 1;
+			SAFE_DELETE_ARRAY(this->heap);
+			this->heap = newHeap;
 		}
 
 	private:
@@ -87,50 +87,50 @@ namespace DataStructureT
 		{
 			for (int i = length / 2; i >= 0; i--)
 			{
-				Heapify(i);
+				this->Heapify(i);
 			}
 		}
 
 		virtual void Insert(const T& element) override
 		{
-			if (heapSize == length)
+			if (this->heapSize == this->length)
 			{
-				IncreaseSize();
+				this->IncreaseSize();
 			}
-			heap[heapSize] = element;
-			int i = heapSize++;
+			this->heap[this->heapSize] = element;
+			int i = this->heapSize++;
 			T temp;
-			while (i > 0 && heap[Parent(i)] < heap[i])
+			while (i > 0 && this->heap[this->Parent(i)] < this->heap[i])
 			{
-				temp = heap[i];
-				heap[i] = heap[Parent(i)];
-				heap[Parent(i)] = temp;
-				i = Parent(i);
+				temp = this->heap[i];
+				this->heap[i] = this->heap[this->Parent(i)];
+				this->heap[this->Parent(i)] = temp;
+				i = this->Parent(i);
 			}
 		}
 
 		virtual T Extract() override
 		{
-			T root = heap[0];
-			heap[0] = heap[--heapSize];
-			Heapify(0);
+			T root = this->heap[0];
+			this->heap[0] = this->heap[--this->heapSize];
+			this->Heapify(0);
 			return root;
 		}
 
 		virtual void Heapify(int i) override
 		{
 			T temp;
-			int l = Left(i);
-			int r = Right(i);
-			int largest = (l < heapSize& heap[l] > heap[i]) ? l : i;
-			if (r < heapSize & heap[r] > heap[largest])
+			int l = this->Left(i);
+			int r = this->Right(i);
+			int largest = (l < this->heapSize& this->heap[l] > this->heap[i]) ? l : i;
+			if (r < this->heapSize & this->heap[r] > this->heap[largest])
 			{
 				largest = r;
 			}
 			if (largest != i)
 			{
-				SWAP(heap[i], heap[largest], temp);
-				Heapify(largest);
+				SWAP(this->heap[i], this->heap[largest], temp);
+				this->Heapify(largest);
 			}
 		}
 
