@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.16)
 
 # Include header files
 include_directories("${HelloWorld_SOURCE_DIR}/include")
