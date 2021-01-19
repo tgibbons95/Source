@@ -12,12 +12,25 @@ jobs:
     # well on Windows or Mac.  You can convert this to a matrix build if you need
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    name: "Build ${{ matrix.platform }} in ${{ matrix.build_type }}"
+    strategy:
+      matrix:
+        platform: [windows, ubuntu, macos]
+        build_type: [Release, Debug]
+    env:
+      PARALLEL: -j 2
+    runs-on: "${{ matrix.platform }}-latest"
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Create Build Environment
+    - if: ${{ matrix.platform == 'ubuntu' }}
+      name: Install Linux Dependencies
+      run: |
+          sudo apt-get update
+          sudo apt install xorg-dev libglu1-mesa-dev
+
+      name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       run: |
@@ -33,9 +46,9 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
-    - name: Build
+    - name: "Build ${{ matrix.platform }} in ${{ matrix.build_type }}"
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
@@ -46,4 +59,4 @@ jobs:
       shell: bash
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C $BUILD_TYPE
+      run: ctest -C ${{ matrix.build_type }}
