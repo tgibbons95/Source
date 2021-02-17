@@ -7,8 +7,13 @@
 
 namespace CSE_514A_T
 {
-	TEST(Assignment1, MultiVariantLinearRegression)
+	TEST(Assignment1, LinearRegression)
 	{
-		MultiVariantLinearRegressionDemo();
+		LinearRegressionDemo();
+	}
+
+	TEST(Assignment1, QuadraticRegression)
+	{
+		QuadraticRegressionDemo();
 	}
 }

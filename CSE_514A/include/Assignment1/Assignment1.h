@@ -1,5 +1,6 @@
 namespace CSE_514A_T
 {
-	int MultiVariantLinearRegressionDemo();
+	void LinearRegressionDemo();
 
+	void QuadraticRegressionDemo();
 }

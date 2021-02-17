@@ -1,6 +1,7 @@
 #include "Assignment1/Assignment1.h"
 
 #include "Models/LinearRegressionModel.h"
+#include "Models/QuadraticRegressionModel.h"
 
 #include "Data/DataVector.h"
 #include <fstream>
@@ -19,7 +20,7 @@
 // Tweak to fine tune the regression algorithm
 #define LEARNING_RATE 0.0005
 #define GRADIENT_THRESHOLD 0.001
-#define MAX_REGRESSION_ITERATIONS 50000
+#define MAX_REGRESSION_ITERATIONS 100000
 
 // Constants
 #define SECONDS_IN_MINUTE 60
@@ -39,14 +40,9 @@ namespace CSE_514A_T
 
 	}
 
-	int MultiVariantLinearRegressionDemo()
+	void LoadDataFromFile(DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES>* trainingDataset,
+						  DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES>* testDataset)
 	{
-		auto start = std::chrono::high_resolution_clock::now();
-
-		// Load data
-		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES>* trainingDataset = new DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES>();
-		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES>* testDataset = new DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES>();
-
 		std::ifstream myFile(DATA_FILE);
 		assert(myFile.is_open());
 
@@ -65,30 +61,60 @@ namespace CSE_514A_T
 				row++;
 			}
 		}
+	}
+
+	template <int K>
+	void RegressionDemo(RegressionModel<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES, K>& model)
+	{
+		auto start = std::chrono::high_resolution_clock::now();
+
+		// Load data
+		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES>* trainingDataset = new DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES>();
+		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES>* testDataset = new DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES>();
+		LoadDataFromFile(trainingDataset, testDataset);
+
 		auto loadEnd = std::chrono::high_resolution_clock::now();
 		PrintRuntime("Load Data", start, loadEnd);
 
 		// Train model
-		LinearRegressionModel<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES> model;
 		model.SetModelParams(LEARNING_RATE, GRADIENT_THRESHOLD, MAX_REGRESSION_ITERATIONS);
 		model.Train(trainingDataset);
 		auto trainEnd = std::chrono::high_resolution_clock::now();
 		PrintRuntime("Train - Linear Regression Model", loadEnd, trainEnd);
 
-		// Predict
+		// Predict and evaluate
 		std::cout << "\n";
+		DataVector<float, OUTPUT_ATTRIBUTES> leastSquareError;
 		for (int i = 0; i < TEST_SAMPLES; i++)
 		{
-			std::cout << "\n" << testDataset->GetFeatures(i) << "," << testDataset->GetObservations(i) << "," << model.Predict(testDataset->GetFeatures(i));
+			auto prediction = model.Predict(testDataset->GetFeatures(i));
+			//std::cout << "\n" << testDataset->GetFeatures(i) << "," << testDataset->GetObservations(i) << "," << prediction;
+			for (int j = 0; j < OUTPUT_ATTRIBUTES; j++)
+			{
+				auto error = testDataset->GetObservations(i).GetAttribute(j) - prediction.GetAttribute(j);
+				leastSquareError.SetAttribute(j, leastSquareError.GetAttribute(j) + 0.5 * (error) * (error));
+			}
 		}
+		std::cout << "\nLeast Square Error:" << leastSquareError;
+
 		auto testEnd = std::chrono::high_resolution_clock::now();
-		PrintRuntime("Predict - Linear Regression Model", trainEnd, testEnd);
+		PrintRuntime("Predict and Evaluate - Linear Regression Model", trainEnd, testEnd);
 
 		std::cout << "\n";
 
 		SAFE_DELETE(trainingDataset);
 		SAFE_DELETE(testDataset);
+	}
 
-		return 0;
+	void LinearRegressionDemo()
+	{
+		LinearRegressionModel<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES> model;
+		RegressionDemo(model);
+	}
+
+	void QuadraticRegressionDemo()
+	{
+		QuadraticRegressionModel<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES> model;
+		RegressionDemo(model);
 	}
 }

@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Include header files
-include_directories("${DataStructure_SOURCE_DIR}/include")
-include_directories("${Algorithm_SOURCE_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 # Gather all cpp files

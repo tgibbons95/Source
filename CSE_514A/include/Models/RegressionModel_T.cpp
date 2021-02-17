@@ -1,5 +1,9 @@
 #include "Models/RegressionModel.h"
 #include <cassert>
+#include <thread>
+#include <mutex>
+
+#define NUM_COMPUTING_THREADS 4
 
 namespace CSE_514A_T
 {
@@ -17,36 +21,86 @@ namespace CSE_514A_T
 	void RegressionModel<X, INPUTS, Y, OUTPUTS, SAMPLES, K>::Train(const DataSet<X, INPUTS, Y, OUTPUTS, SAMPLES>* data)
 	{
 		bool smallGradient = false;
+		std::thread myThreads[NUM_COMPUTING_THREADS];
+
+		int index = 0;  // protected by index_mutex
+		std::mutex index_mutex;
 		for (int iter = 0; iter < iterations_ && !smallGradient; iter++)
 		{
+			std::array<std::array<std::array<DataVector<X, INPUTS>, OUTPUTS>, K>, NUM_COMPUTING_THREADS> partialWeightGradients;
 			std::array<std::array<DataVector<X, INPUTS>, OUTPUTS>, K> weightGradients;
+			std::array<std::array<X, OUTPUTS>, NUM_COMPUTING_THREADS> partialOffsetWeightGradients;
 			std::array<X, OUTPUTS> offsetWeightGradients;
 			for (int i = 0; i < OUTPUTS; i++)
 			{
 				offsetWeightGradients[i] = 0;
+				for (int t = 0; t < NUM_COMPUTING_THREADS; t++) {
+					partialOffsetWeightGradients[t][i] = 0;
+				}
 			}
 
-			// Compute Gradients
-			for (int j = 0; j < SAMPLES; j++)	
-			{
-				auto predictions = Predict(data->GetFeatures(j));
-				auto observations = data->GetObservations(j);
+			index = 0;
 
-				// Train separate weights for each output
+			auto exec = [this, data]
+			(int threadNum, 
+				std::array<std::array<std::array<DataVector<X, INPUTS>, OUTPUTS>, K>, NUM_COMPUTING_THREADS>* partialWeightGradients,
+				std::array<std::array<X, OUTPUTS>, NUM_COMPUTING_THREADS>* partialOffsetWeightGradients,
+				int* index,
+				std::mutex* mutex)
+			{
+				// Compute Gradients
+				int start = threadNum * SAMPLES / NUM_COMPUTING_THREADS;
+				int stop = (threadNum + 1) * SAMPLES / NUM_COMPUTING_THREADS;
+				while(*index < SAMPLES)
+				{
+					(*mutex).lock();
+					++(*index);
+					int j = (*index);
+					(*mutex).unlock();
+					if (j < SAMPLES)
+					{
+						auto predictions = Predict(data->GetFeatures(j));
+						auto observations = data->GetObservations(j);
+
+						// Train separate weights for each output
+						for (int i = 0; i < OUTPUTS; i++)
+						{
+							auto& prediction = predictions.GetAttribute(i);
+							auto& observation = observations.GetAttribute(i);
+
+							(*partialOffsetWeightGradients)[threadNum][i] += (prediction - observation);
+							for (int k = 0; k < K; k++)
+							{
+								auto& weightGradient = (*partialWeightGradients)[threadNum][k][i];
+								auto& weight = weights_[k][i];
+
+								for (int l = 0; l < INPUTS; l++)
+								{
+									weightGradient.SetAttribute(l, weightGradient.GetAttribute(l) + (prediction - observation) * static_cast<X>(::pow(data->GetFeatures(j).GetAttribute(l), k + 1)));
+								}
+							}
+						}
+					}
+				}
+			};
+
+			for (int t = 0; t < NUM_COMPUTING_THREADS; t++) {
+				myThreads[t] = std::thread(exec, t, &partialWeightGradients, &partialOffsetWeightGradients, &index, &index_mutex);
+			}
+
+			for (int t = 0; t < NUM_COMPUTING_THREADS; t++) {
+				myThreads[t].join();
+			}
+
+			for (int t = 0; t < NUM_COMPUTING_THREADS; t++) {
 				for (int i = 0; i < OUTPUTS; i++)
 				{
-					auto& prediction = predictions.GetAttribute(i);
-					auto& observation = observations.GetAttribute(i);
-
-					offsetWeightGradients[i] += (prediction - observation);
+					offsetWeightGradients[i] += partialOffsetWeightGradients[t][i];
 					for (int k = 0; k < K; k++)
 					{
-						auto& weightGradient = weightGradients[k][i];
-						auto& weight = weights_[k][i];
-
 						for (int l = 0; l < INPUTS; l++)
 						{
-							weightGradient.SetAttribute(l, weightGradient.GetAttribute(l) + (prediction - observation) * static_cast<X>(::pow(data->GetFeatures(j).GetAttribute(l), k + 1)));
+							weightGradients[k][i].SetAttribute(l, weightGradients[k][i].GetAttribute(l) + partialWeightGradients[t][k][i].GetAttribute(l));
 						}
 					}
 				}
