@@ -28,7 +28,7 @@
 
 namespace CSE_514A_T
 {
-	void PrintRuntime(const char* title, std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point stop)
+	void PrintRuntime(const char* title, std::chrono::high_resolution_clock::time_point start, std::chrono::high_resolution_clock::time_point stop)
 	{
 		std::cout << "\n----------------------" 
 			<< title 
@@ -88,7 +88,7 @@ namespace CSE_514A_T
 		for (int i = 0; i < TEST_SAMPLES; i++)
 		{
 			auto prediction = model.Predict(testDataset->GetFeatures(i));
-			//std::cout << "\n" << testDataset->GetFeatures(i) << "," << testDataset->GetObservations(i) << "," << prediction;
+			std::cout << "\n" << testDataset->GetFeatures(i) << "," << testDataset->GetObservations(i) << "," << prediction;
 			for (int j = 0; j < OUTPUT_ATTRIBUTES; j++)
 			{
 				auto error = testDataset->GetObservations(i).GetAttribute(j) - prediction.GetAttribute(j);

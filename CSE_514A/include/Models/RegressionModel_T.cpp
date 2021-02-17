@@ -2,6 +2,7 @@
 #include <cassert>
 #include <thread>
 #include <mutex>
+#include <iostream>
 
 #define NUM_COMPUTING_THREADS 4
 
@@ -116,7 +117,7 @@ namespace CSE_514A_T
 					auto& weightGradient = weightGradients[k][i];
 					auto& weight = weights_[k][i];
 
-					if (iter % 1000 == 0)
+					if (iter % 10000 == 0)
 					{
 						std::cout << "\n" << iter << " K=" << k + 1 << ": (" << offsetWeightGradients[i] << ")"<< weightGradient;
 					}
