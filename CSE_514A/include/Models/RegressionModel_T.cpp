@@ -4,6 +4,16 @@
 namespace CSE_514A_T
 {
 	template<typename X, int INPUTS, typename Y, int OUTPUTS, int SAMPLES, int K>
+	RegressionModel<X, INPUTS, Y, OUTPUTS, SAMPLES, K>::RegressionModel()
+		: offsetWeights()
+	{
+		for (int i = 0; i < OUTPUTS; i++)
+		{
+			offsetWeights[i] = 0;
+		}
+	}
+
+	template<typename X, int INPUTS, typename Y, int OUTPUTS, int SAMPLES, int K>
 	void RegressionModel<X, INPUTS, Y, OUTPUTS, SAMPLES, K>::Train(const DataSet<X, INPUTS, Y, OUTPUTS, SAMPLES>* data)
 	{
 		bool smallGradient = false;
@@ -17,7 +27,7 @@ namespace CSE_514A_T
 			}
 
 			// Compute Gradients
-			for (int j = 0; j < SAMPLES; j++)
+			for (int j = 0; j < SAMPLES; j++)	
 			{
 				auto predictions = Predict(data->GetFeatures(j));
 				auto observations = data->GetObservations(j);
@@ -29,14 +39,14 @@ namespace CSE_514A_T
 					auto& observation = observations.GetAttribute(i);
 
 					offsetWeightGradients[i] += (prediction - observation);
-					for (int k = 1; k <= K; k++)
+					for (int k = 0; k < K; k++)
 					{
-						auto& weightGradient = weightGradients[k - 1][i];
-						auto& weight = weights_[k - 1][i];
+						auto& weightGradient = weightGradients[k][i];
+						auto& weight = weights_[k][i];
 
 						for (int l = 0; l < INPUTS; l++)
 						{
-							weightGradient.SetAttribute(l, weightGradient.GetAttribute(l) + (prediction - observation) * /*::pow(*/data->GetFeatures(j).GetAttribute(l)/*, k)*/);
+							weightGradient.SetAttribute(l, weightGradient.GetAttribute(l) + (prediction - observation) * static_cast<X>(::pow(data->GetFeatures(j).GetAttribute(l), k + 1)));
 						}
 					}
 				}
@@ -47,14 +57,14 @@ namespace CSE_514A_T
 			{
 				smallGradient = true;
 				offsetWeights[i] = offsetWeights[i] - learningRate_ * offsetWeightGradients[i];
-				for (int k = 1; k <= K; k++)
+				for (int k = 0; k < K; k++)
 				{
-					auto& weightGradient = weightGradients[k-1][i];
-					auto& weight = weights_[k-1][i];
+					auto& weightGradient = weightGradients[k][i];
+					auto& weight = weights_[k][i];
 
 					if (iter % 1000 == 0)
 					{
-						std::cout << "\n" << iter << " K=" << k << ": (" << offsetWeightGradients[i] << ")"<< weightGradient;
+						std::cout << "\n" << iter << " K=" << k + 1 << ": (" << offsetWeightGradients[i] << ")"<< weightGradient;
 					}
 					for (int j = 0; j < INPUTS; j++)
 					{
@@ -73,13 +83,13 @@ namespace CSE_514A_T
 		for (int i = 0; i < OUTPUTS; i++)
 		{
 			Y prediction = static_cast<Y>(offsetWeights[i]);
-			for (int k = 1; k <= K; k++)
+			for (int k = 0; k < K; k++)
 			{
-				auto& weight = weights_[k-1][i];
+				auto& weight = weights_[k][i];
 
 				for (int j = 0; j < INPUTS; j++)
 				{
-					prediction += (weight.GetAttribute(j) * /*::pow(*/data.GetAttribute(j)/*,k)*/);
+					prediction += (weight.GetAttribute(j) * ::pow(data.GetAttribute(j), k + 1));
 				}
 			}
 			result.SetAttribute(i, prediction);

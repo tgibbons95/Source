@@ -1,5 +1,5 @@
-#ifndef LINEAR_REGRESION_MODEL_H
-#define LINEAR_REGRESION_MODEL_H
+#ifndef REGRESION_MODEL_H
+#define REGRESION_MODEL_H
 
 #include "Models/Model.h"
 
@@ -10,7 +10,7 @@ namespace CSE_514A_T
 	{
 	public:
 
-		RegressionModel() = default;
+		RegressionModel();
 		~RegressionModel() = default;
 
 		virtual void Train(const DataSet<X, INPUTS, Y, OUTPUTS, SAMPLES>* data) override;

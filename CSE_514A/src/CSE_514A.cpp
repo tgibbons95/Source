@@ -1,6 +1,6 @@
 #include "Assignment1/Assignment1.h"
 
-#include "Models/RegressionModel.h"
+#include "Models/LinearRegressionModel.h"
 
 #include "Data/DataVector.h"
 #include <fstream>
@@ -19,8 +19,9 @@
 // Tweak to fine tune the regression algorithm
 #define LEARNING_RATE 0.0005
 #define GRADIENT_THRESHOLD 0.001
-#define MAX_REGRESSION_ITERATIONS 100000
+#define MAX_REGRESSION_ITERATIONS 50000
 
+// Constants
 #define SECONDS_IN_MINUTE 60
 #define MICROSECONDS_IN_SECOND 1000000
 
@@ -43,8 +44,8 @@ namespace CSE_514A_T
 		auto start = std::chrono::high_resolution_clock::now();
 
 		// Load data
-		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES> trainingDataset;
-		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES> testDataset;
+		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES>* trainingDataset = new DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES>();
+		DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES>* testDataset = new DataSet<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TEST_SAMPLES>();
 
 		std::ifstream myFile(DATA_FILE);
 		assert(myFile.is_open());
@@ -56,11 +57,11 @@ namespace CSE_514A_T
 		{
 			if (row < TRAINING_SAMPLES)
 			{
-				trainingDataset.SetData(line.c_str(), row++);
+				trainingDataset->SetData(line.c_str(), row++);
 			}
 			else
 			{
-				testDataset.SetData(line.c_str(), row - TRAINING_SAMPLES);
+				testDataset->SetData(line.c_str(), row - TRAINING_SAMPLES);
 				row++;
 			}
 		}
@@ -68,9 +69,9 @@ namespace CSE_514A_T
 		PrintRuntime("Load Data", start, loadEnd);
 
 		// Train model
-		RegressionModel<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES, 1> model;
+		LinearRegressionModel<float, INPUT_ATTRIBUTES, float, OUTPUT_ATTRIBUTES, TRAINING_SAMPLES> model;
 		model.SetModelParams(LEARNING_RATE, GRADIENT_THRESHOLD, MAX_REGRESSION_ITERATIONS);
-		model.Train(&trainingDataset);
+		model.Train(trainingDataset);
 		auto trainEnd = std::chrono::high_resolution_clock::now();
 		PrintRuntime("Train - Linear Regression Model", loadEnd, trainEnd);
 
@@ -78,12 +79,15 @@ namespace CSE_514A_T
 		std::cout << "\n";
 		for (int i = 0; i < TEST_SAMPLES; i++)
 		{
-			std::cout << "\n" << testDataset.GetFeatures(i) << "," << testDataset.GetObservations(i) << "," << model.Predict(testDataset.GetFeatures(i));
+			std::cout << "\n" << testDataset->GetFeatures(i) << "," << testDataset->GetObservations(i) << "," << model.Predict(testDataset->GetFeatures(i));
 		}
 		auto testEnd = std::chrono::high_resolution_clock::now();
 		PrintRuntime("Predict - Linear Regression Model", trainEnd, testEnd);
 
 		std::cout << "\n";
+
+		SAFE_DELETE(trainingDataset);
+		SAFE_DELETE(testDataset);
 
 		return 0;
 	}
