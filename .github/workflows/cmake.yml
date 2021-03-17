@@ -19,6 +19,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+        token: ${{ secrets.ACCESS_TOKEN }}
 
     - if: ${{ matrix.platform == 'ubuntu' }}
       name: Install Linux Dependencies
