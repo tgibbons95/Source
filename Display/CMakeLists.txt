@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(Display)
+project(ThDisplay)
 
-add_subdirectory(lib)
-add_subdirectory(src)
-add_subdirectory(test)
+set(CMAKE_BUILD_TYPE Debug)
 
-install(DIRECTORY "include/"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+add_subdirectory(DisplayScene)
+add_subdirectory(DisplayManager)
+add_subdirectory(Widget)
+add_subdirectory(DisplayScenes)

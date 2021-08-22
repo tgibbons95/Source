@@ -1,3 +1,9 @@
 [submodule "CSE-514A"]
 	path = CSE-514A
 	url = https://github.com/tgibbons95/CSE-514A
+[submodule "ExternalSource/freetype"]
+	path = ExternalSource/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
+[submodule "ExternalSource/glew"]
+	path = ExternalSource/glew
+	url = https://github.com/nigels-com/glew.git
